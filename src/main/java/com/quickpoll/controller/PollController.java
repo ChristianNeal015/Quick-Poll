@@ -20,18 +20,20 @@ public class PollController {
     @Inject
     private PollRepository pollRepository;
 
-    @RequestMapping(value="/polls", method= RequestMethod.GET)
+    @RequestMapping(value = "/polls", method = RequestMethod.GET)
     public ResponseEntity<Iterable<Poll>> getAllPolls() {
         Iterable<Poll> allPolls = pollRepository.findAll();
         return new ResponseEntity<>(pollRepository.findAll(), HttpStatus.OK);
     }
+
     protected void verifyPoll(Long pollId) throws ResourceNotFoundException {
         Optional<Poll> poll = pollRepository.findById(pollId);
-            if (poll == null) {
-                throw new ResourceNotFoundException("Poll with id " + pollId + " not found");
+        if (!poll.isPresent()) {
+            new ResourceNotFoundException("Poll with id " + pollId + " not found");
         }
     }
-    @RequestMapping(value="/polls", method=RequestMethod.POST)
+
+    @RequestMapping(value = "/polls", method = RequestMethod.POST)
     public ResponseEntity<?> createPoll(@Valid @RequestBody Poll poll) {
         poll = pollRepository.save(poll);
 
@@ -46,23 +48,31 @@ public class PollController {
 
         return new ResponseEntity<>(null, responseHeaders, HttpStatus.CREATED);
     }
-    @RequestMapping(value="/polls/{pollId}", method=RequestMethod.GET)
+
+    @RequestMapping(value = "/polls/{pollId}", method = RequestMethod.GET)
     public ResponseEntity<?> getPoll(@PathVariable Long pollId) {
+        verifyPoll(pollId);
         Optional<Poll> p = pollRepository.findById(pollId);
-        if (!p.isPresent()){
+        if (!p.isPresent()) {
             throw new ResourceNotFoundException("Poll with id " + pollId + " not found");
         }
-        return new ResponseEntity<> (p, HttpStatus.OK);
+        return new ResponseEntity<>(p, HttpStatus.OK);
     }
-    @RequestMapping(value="/polls/{pollId}", method=RequestMethod.PUT)
+
+    @RequestMapping(value = "/polls/{pollId}", method = RequestMethod.PUT)
     public ResponseEntity<?> updatePoll(@RequestBody Poll poll, @PathVariable Long pollId) {
         // Save the entity
+        Optional<Poll> p = pollRepository.findById(pollId);
+        if (!p.isPresent()) {
+           createPoll(poll);
+        }
         pollRepository.save(poll);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @RequestMapping(value="/polls/{pollId}", method=RequestMethod.DELETE)
+    @RequestMapping(value = "/polls/{pollId}", method = RequestMethod.DELETE)
     public ResponseEntity<?> deletePoll(@PathVariable Long pollId) {
+        verifyPoll(pollId);
         pollRepository.deleteById(pollId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
